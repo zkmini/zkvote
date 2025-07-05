@@ -5,8 +5,11 @@ import {SelfVerificationRoot} from "@selfxyz/contracts/abstract/SelfVerification
 import {ISelfVerificationRoot} from "@selfxyz/contracts/interfaces/ISelfVerificationRoot.sol";
 import {SelfStructs} from "@selfxyz/contracts/libraries/SelfStructs.sol";
 import {Poll} from "./Poll.sol";
+import {BytesLib} from "./BytesLib.sol";
 
 contract SystemEngine is SelfVerificationRoot {
+    using BytesLib for bytes;
+
     error SystemEngine__NotValidHuman();
 
     uint256 private pollCount;
@@ -32,18 +35,25 @@ contract SystemEngine is SelfVerificationRoot {
 
     function customVerificationHook(
         ISelfVerificationRoot.GenericDiscloseOutputV2 memory output,
-        bytes memory userData // actionType,accessCode,address
+        bytes memory userData // actionType,accessCode
     ) internal override {
-        (string memory actionType, bytes32 accessCode, address participant) =
-            abi.decode(userData, (string, bytes32, address));
+        uint8 actionCode = uint8(userData[0]);
+
+        bytes memory rawCode = BytesLib.slice(userData, 1, 32);
+        bytes32 accessCode;
+        assembly {
+            accessCode := mload(add(rawCode, 32))
+        }
+
+        address participant = address(uint160(output.userIdentifier));
 
         address pollAddress = codeToPollAddress[accessCode];
 
         Poll pollContract = Poll(pollAddress);
 
-        if (keccak256(bytes(actionType)) == keccak256(bytes("register-user"))) {
+        if (actionCode == 0) {
             pollContract.addParticipant(participant, output.nationality);
-        } else if (keccak256(bytes(actionType)) == keccak256(bytes("create-poll"))) {
+        } else if (actionCode == 1) {
             isVerified[participant] = true;
         }
     }
@@ -53,15 +63,20 @@ contract SystemEngine is SelfVerificationRoot {
         bytes32 userIdentifier,
         bytes memory userDefinedData // actionType,accessCode
     ) public view override returns (bytes32) {
-        (string memory actionType, bytes32 accessCode) = abi.decode(userDefinedData, (string, bytes32));
-        if (keccak256(bytes(actionType)) == keccak256(bytes("register-user"))) {
+        uint8 actionCode = uint8(userDefinedData[0]);
+        if (actionCode == 1) {
+            bytes memory rawCode = BytesLib.slice(userDefinedData, 1, 32);
+            bytes32 accessCode;
+            assembly {
+                accessCode := mload(add(rawCode, 32))
+            }
             address pollAddr = codeToPollAddress[accessCode];
             return configIds[pollAddr];
-        } else if (keccak256(bytes(actionType)) == keccak256(bytes("create-poll"))) {
+        } else if (actionCode == 0) {
             return DEFAULT_VERIFICATION_CONFIG_ID;
         }
 
-        revert("Invalid action type");
+        revert("Invalid action code");
     }
 
     function createPoll(
