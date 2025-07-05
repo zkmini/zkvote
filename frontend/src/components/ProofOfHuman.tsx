@@ -40,7 +40,6 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
       userIdType: "hex",
       // disclosures: { nationality: true }, // Customize as needed
       devMode: true,
-      userDefinedData: 
     }).build();
   }, [userId]);
 

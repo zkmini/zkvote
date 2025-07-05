@@ -6,8 +6,7 @@ type Tab = typeof TABS[number];
 import { ethers } from "ethers";
 import systemEngineAbi from "../abi/SystemEngine.abi.json";
 
-// TODO: Replace with your actual deployed SystemEngine contract address
-const SYSTEM_ENGINE_ADDRESS = "0xYourSystemEngineAddressHere"; // TODO: Replace with your deployed SystemEngine address
+const SYSTEM_ENGINE_ADDRESS = "0xa947214604c6Fb550B1AacA8bc5Bd77bfDEDfBE5"; // Update to your actual deployed SystemEngine address
 
 function getStatusLabel(state: number) {
   switch (state) {
@@ -35,7 +34,8 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
   const handleVote = async (e: React.FormEvent) => {
     e.preventDefault();
     setVotingError(null);
-    if (!selectedParticipant || !verificationConfig?.pollId || typeof verificationConfig.optionIndex !== 'number') return;
+    // Update this handler to use the selected poll and option index directly.
+    if (!selectedParticipant || !selectedPollId || typeof selectedOptionIndex !== 'number') return;
     try {
       setVoting(true);
       if (!(window as any).ethereum) throw new Error("Wallet not detected");
@@ -43,7 +43,7 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
       const signer = await provider.getSigner();
       const systemEngine = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, signer);
       // Call castVote(pollId, optionIndex) on SystemEngine
-      const tx = await systemEngine.castVote(verificationConfig.pollId, verificationConfig.optionIndex);
+      const tx = await systemEngine.castVote(selectedPollId, selectedOptionIndex);
       await tx.wait();
       setVoting(false);
       setParticipants(null); // Hide voting UI after voting

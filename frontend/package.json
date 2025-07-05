@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@selfxyz/qrcode": "^1.0.10-beta.1",
     "ethers": "^6.15.0",
     "next": "15.3.5",
     "qrcode.react": "^4.2.0",

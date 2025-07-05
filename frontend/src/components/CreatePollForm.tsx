@@ -10,15 +10,13 @@ export interface PollFormState {
   options: string[];
   owner: string;
   countries: string[];
-  verificationConfigId: string;
-}
+} 
 
 const defaultState: PollFormState = {
   title: "",
   options: ["", ""],
   owner: "", // Could be set to connected wallet address later
-  countries: [""],
-  verificationConfigId: "",
+  countries: [""]
 };
 
 const CreatePollForm: React.FC<CreatePollFormProps> = ({ onCancel, onCreate }) => {
@@ -59,7 +57,7 @@ const CreatePollForm: React.FC<CreatePollFormProps> = ({ onCancel, onCreate }) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onCreate(form);
-  };
+  }
 
   return (
     <form className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -115,6 +113,8 @@ const CreatePollForm: React.FC<CreatePollFormProps> = ({ onCancel, onCreate }) =
         onChange={e => handleChange(e, "verificationConfigId")}
         required
       />
+
+
 
       <div className="flex gap-4 mt-4">
         <button type="submit" className="btn btn-success flex-1">Create Poll</button>
