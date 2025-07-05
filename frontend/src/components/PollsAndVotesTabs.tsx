@@ -5,9 +5,9 @@ const TABS = ["Polls", "Votes"] as const;
 type Tab = typeof TABS[number];
 import { ethers } from "ethers";
 import systemEngineAbi from "../abi/SystemEngine.abi.json";
-import pollAbi from "../abi/Poll.abi.json";
 
-const SYSTEM_ENGINE_ADDRESS = "<YOUR_SYSTEM_ENGINE_ADDRESS_HERE>"; // TODO: Replace with your deployed SystemEngine address
+// TODO: Replace with your actual deployed SystemEngine contract address
+const SYSTEM_ENGINE_ADDRESS = "0xYourSystemEngineAddressHere"; // TODO: Replace with your deployed SystemEngine address
 
 function getStatusLabel(state: number) {
   switch (state) {
@@ -31,21 +31,19 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
   const [voting, setVoting] = useState(false);
   const [votingError, setVotingError] = useState<string | null>(null);
 
-  // ...existing state and logic...
-
-  // Voting handler
+  // Voting handler (SystemEngine only)
   const handleVote = async (e: React.FormEvent) => {
     e.preventDefault();
     setVotingError(null);
-    if (!selectedParticipant || !verificationConfig?.pollAddress) return;
+    if (!selectedParticipant || !verificationConfig?.pollId || typeof verificationConfig.optionIndex !== 'number') return;
     try {
       setVoting(true);
       if (!(window as any).ethereum) throw new Error("Wallet not detected");
       const provider = new ethers.BrowserProvider((window as any).ethereum);
       const signer = await provider.getSigner();
-      const pollContract = new ethers.Contract(verificationConfig.pollAddress, pollAbi, signer);
-      // Assuming vote(address) is the method; adjust if needed
-      const tx = await pollContract.vote(selectedParticipant);
+      const systemEngine = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, signer);
+      // Call castVote(pollId, optionIndex) on SystemEngine
+      const tx = await systemEngine.castVote(verificationConfig.pollId, verificationConfig.optionIndex);
       await tx.wait();
       setVoting(false);
       setParticipants(null); // Hide voting UI after voting
@@ -56,6 +54,9 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
       setVotingError(err.message || 'Failed to submit vote');
     }
   };
+
+  // Handler for verifying poll access code (SystemEngine only)
+
 
   const [activeTab, setActiveTab] = useState<Tab>("Polls");
   const [polls, setPolls] = useState<any[]>([]);
@@ -84,9 +85,11 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
       const pollAddress = await systemEngine.accessCodeToAddress(accessCode);
       if (!pollAddress || pollAddress === ethers.ZeroAddress) throw new Error("Poll not found");
       // Fetch verification config from poll contract
-      const pollContract = new ethers.Contract(pollAddress, pollAbi, provider);
-      const verificationConfig = await pollContract.verificationConfig();
-      setVerificationConfig({ ...verificationConfig, pollAddress });
+      // SystemEngine contract instance (update pollAddress to SYSTEM_ENGINE_ADDRESS if needed)
+      const systemEngineContract = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, provider);
+      // TODO: SystemEngine does not have verificationConfig method on Poll. Update this logic as needed.
+      // const verificationConfig = await pollContract.verificationConfig();
+      // setVerificationConfig({ ...verificationConfig, pollAddress });
       setShowQR(true);
     } catch (err: any) {
       setVerificationError(err.message || "Failed to verify poll access code");
@@ -112,7 +115,8 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
 
       const pollData = await Promise.all(
         pollAddresses.map(async (address) => {
-          const contract = new ethers.Contract(address, pollAbi, provider);
+          // Use SystemEngine ABI for contract instance
+          const contract = new ethers.Contract(address, systemEngineAbi, provider);
           const [title, state, owner] = await Promise.all([
             contract.title(),
             contract.state(),
@@ -132,7 +136,7 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
     // if (!(window as any).ethereum) return;
     // const provider = new ethers.BrowserProvider((window as any).ethereum);
     // const signer = await provider.getSigner();
-    // const contract = new ethers.Contract(poll.address, pollAbi, signer);
+    // const contract = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, signer);
     // await contract.end();
     // Optionally refetch polls here
     // Contract interaction is disabled for now.
@@ -163,10 +167,10 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
             {!loading && polls.length === 0 && <p>No polls found.</p>}
             <ul className="w-full">
               {polls.map((poll) => (
-                <li key={poll.address} className="mb-4 p-4 border rounded">
+                <li key={poll.id} className="mb-4 p-4 border rounded">
                   <div><b>Title:</b> {poll.title}</div>
                   <div><b>Status:</b> {getStatusLabel(poll.state)}</div>
-                  <div><b>Address:</b> {poll.address}</div>
+                  <div><b>ID:</b> {poll.id}</div>
                   {account && account.toLowerCase() === poll.owner.toLowerCase() && poll.state !== 2 && (
                     <button
                       className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -217,7 +221,7 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
                 onSuccess={async () => {
                   setShowQR(false);
                   // Fetch participants after successful verification
-                  if (verificationConfig.pollAddress) {
+                  if (verificationConfig.pollId) {
                     setParticipants(null);
                     setSelectedParticipant(null);
                     setVotingError(null);
@@ -225,9 +229,12 @@ const PollsAndVotesTabs: React.FC<PollsAndVotesTabsProps> = () => {
                     try {
                       if (!(window as any).ethereum) throw new Error("Wallet not detected");
                       const provider = new ethers.BrowserProvider((window as any).ethereum);
-                      const pollContract = new ethers.Contract(verificationConfig.pollAddress, pollAbi, provider);
-                      const participantAddresses = await pollContract.getRegisteredParticipants();
-                      setParticipants(participantAddresses);
+                      const systemEngine = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, provider);
+                      // You need a SystemEngine method to get participants for a pollId
+                      // Example: const participantAddresses = await systemEngine.getParticipants(verificationConfig.pollId);
+                      // setParticipants(participantAddresses);
+                      // For now, leave as not implemented:
+                      setParticipants([]); // TODO: Replace with real data from SystemEngine
                     } catch (err: any) {
                       setVotingError(err.message || "Failed to fetch participants");
                     }

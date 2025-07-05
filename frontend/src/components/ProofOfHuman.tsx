@@ -3,6 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { SelfQRcodeWrapper, SelfAppBuilder } from '@selfxyz/qrcode';
 import { v4 as uuidv4 } from 'uuid';
+import { ethers } from 'ethers';
+import systemEngineAbi from '../abi/SystemEngine.abi.json';
+
+const SYSTEM_ENGINE_ADDRESS = "0xb67a4ce5242a2DFaF0bA6187d62363276b0b62ad";
 
 type ProofOfHumanProps = {
   onVerified: () => void;
@@ -15,11 +19,72 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Generate a unique user ID when component mounts
-    setUserId(uuidv4());
+    // Generate a random 16-byte hex string starting with 0x
+    const arr = new Uint8Array(16);
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(arr);
+      const hex = Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+      setUserId('0x' + hex);
+    }
   }, []);
 
-  if (!userId) {
+  // Build SelfApp for create-poll verification
+  const selfApp = React.useMemo(() => {
+    if (!userId) return null;
+    return new SelfAppBuilder({
+      appName: "ZK Vote Proof of Human",
+      scope: "zkvote-create-poll",
+      endpoint: SYSTEM_ENGINE_ADDRESS,
+      endpointType: "staging_celo", // or your chain
+      userId: userId,
+      userIdType: "hex",
+      // disclosures: { nationality: true }, // Customize as needed
+      devMode: true
+    }).build();
+  }, [userId]);
+
+  // Helper to get MetaMask provider only
+  function getMetaMaskProvider() {
+    if (typeof window === 'undefined' || !window.ethereum) return null;
+    // Multiple providers (EIP-1193)
+    if (window.ethereum.providers) {
+      return window.ethereum.providers.find((p: { isMetaMask?: boolean }) => p.isMetaMask);
+    }
+    // Single provider
+    if (window.ethereum.isMetaMask) return window.ethereum;
+    return null;
+  }
+
+  // Handler for QR success
+  const handleSuccess = async () => {
+    setIsVerified(false);
+    setError(null);
+    try {
+      const providerObj = getMetaMaskProvider();
+      if (!providerObj) throw new Error("MetaMask not detected. Please install MetaMask and try again.");
+      const provider = new ethers.BrowserProvider(providerObj);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+      const contract = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, provider);
+      const verified = await contract.isVerified(address);
+      if (verified) {
+        setIsVerified(true);
+        onVerified();
+      } else {
+        setError("Verification not confirmed on-chain. Please try again.");
+      }
+    } catch (err: any) {
+      setError(err.message || 'Verification failed');
+    }
+  };
+
+  // Handler for QR error
+  const handleError = (error: any) => {
+    setError(error?.message || 'Verification failed');
+    setIsVerified(false);
+  };
+
+  if (!userId || !selfApp) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -30,36 +95,6 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
     );
   }
 
-  // Create the SelfApp configuration
-  const selfApp = new SelfAppBuilder({
-    appName: "Prove You're Human",
-    scope: "prove-human-demo",
-    endpoint: systemEngineAddress, 
-    endpointType: "staging_celo",
-    userId,
-    userIdType: "hex",
-    disclosures: {
-      issuing_state: true,
-      name: true,
-      nationality: true,
-    },
-    devMode: true,
-    header: "ngrok-skip-browser-warning: true",
-  }).build();
-
-  const handleSuccess = async (data?: any) => {
-    console.log('Verification successful!', data);
-    setIsVerified(true);
-    setVerificationData(data);
-    setError(null);
-    onVerified(); // Call parent callback
-  };
-
-  const handleError = (error: any) => {
-    console.error('Verification failed:', error);
-    setError(error?.message || 'Verification failed');
-    setIsVerified(false);
-  };
 
   const resetVerification = () => {
     setIsVerified(false);
@@ -123,6 +158,44 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
                   size={280}
                 />
               </div>
+            </div>
+
+            {/* Button to trigger on-chain verification */}
+            <div className="mt-8">
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                onClick={async () => {
+                  setError(null);
+                  try {
+                    if (!(window as any).ethereum) throw new Error("Wallet not detected");
+                    const provider = new ethers.BrowserProvider((window as any).ethereum);
+                    const signer = await provider.getSigner();
+                    const contract = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, signer);
+                    // Prepare userData for 'create-poll' action
+                    const actionType = "create-poll";
+                    const accessCode = ethers.ZeroAddress; // Or whatever value is appropriate
+                    const userAddr = await signer.getAddress();
+                    // This assumes you have a method that triggers the customVerificationHook with 'create-poll'.
+                    // If such a method doesn't exist, you may need to call createPoll or similar.
+                    // Example: await contract.createPoll(...);
+                    // For demonstration, we'll just call isVerified after (simulate success)
+                    // TODO: Replace with actual call that triggers verification on-chain
+                    // await contract.createPoll("dummy", ["A", "B"], userAddr, ["PL"], ethers.ZeroHash);
+                    // After transaction, check verification
+                    const verified = await contract.isVerified(userAddr);
+                    if (verified) {
+                      setIsVerified(true);
+                      onVerified();
+                    } else {
+                      setError("Verification not confirmed on-chain. Please try again after creating a poll.");
+                    }
+                  } catch (err: any) {
+                    setError(err.message || 'Verification failed');
+                  }
+                }}
+              >
+                Complete On-Chain Verification
+              </button>
             </div>
 
             {/* Instructions */}
