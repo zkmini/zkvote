@@ -43,7 +43,7 @@ contract Poll {
 
     uint256 private startTime;
     uint256 private endTime;
-    uint256 private duration;
+    uint256 private duration = 0;
 
     mapping(string country => bool isAllowed) private countriesAllowed;
 
@@ -82,12 +82,12 @@ contract Poll {
     /**
      * @param _title    The poll title
      * @param _options  The array of option labels
-     * @param _duration Duration in seconds for which the poll runs once started
+     * @ param _duration Duration in seconds for which the poll runs once started
      */
     constructor(
         string memory _title,
         string[] memory _options,
-        uint256 _duration,
+        //uint256 _duration,
         address _owner,
         string[] memory _countries
     ) {
@@ -95,16 +95,16 @@ contract Poll {
             revert Poll__OptionCountMustBeGreaterThanTwo();
         }
 
-        if (_duration == 0) {
-            revert Poll__MustLastLongerThanZero();
-        }
+        // if (_duration == 0) {
+        //     revert Poll__MustLastLongerThanZero();
+        // }
 
         title = _title;
         options = _options;
         GOVERNOR = msg.sender;
         OWNER = _owner;
         state = State.CREATED;
-        duration = _duration;
+        //duration = _duration;
         endTime = 0;
         startTime = 0;
         for (uint256 i = 0; i < _countries.length; i++) {

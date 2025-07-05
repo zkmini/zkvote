@@ -4,3 +4,8 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+remappings = [
+    "@selfxyz/contracts=node_modules/@selfxyz/contracts/contracts/",
+    "@openzeppelin/contracts=node_modules/@openzeppelin/contracts/",
+]
