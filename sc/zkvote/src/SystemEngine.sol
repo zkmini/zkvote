@@ -7,6 +7,8 @@ import {SelfStructs} from "@selfxyz/contracts/libraries/SelfStructs.sol";
 import {Poll} from "./Poll.sol";
 
 contract SystemEngine is SelfVerificationRoot {
+    error SystemEngine__NotValidHuman();
+
     uint256 private pollCount;
 
     mapping(bytes32 accessCode => address Poll) codeToPollAddress;
@@ -15,15 +17,15 @@ contract SystemEngine is SelfVerificationRoot {
     mapping(uint256 pollId => address pollAddress) idToAddress;
 
     bytes32 private constant DEFAULT_VERIFICATION_CONFIG_ID =
-        "0x7b6436b0c98f62380866d9432c2af0ee08ce16a171bda6951aecd95ee1307d61";
+        0x7b6436b0c98f62380866d9432c2af0ee08ce16a171bda6951aecd95ee1307d61;
 
     event VerificationCompleted(ISelfVerificationRoot.GenericDiscloseOutputV2 output, bytes userData);
+    event PollCreated(uint256 indexed id);
 
-    constructor(address identityVerificationHubV2Address, uint256 scope, bytes32 _verificationConfigId)
+    constructor(address identityVerificationHubV2Address, uint256 scope)
         SelfVerificationRoot(identityVerificationHubV2Address, scope)
     {
         pollCount = 0;
-        verificationConfigId = _verificationConfigId;
     }
 
     function customVerificationHook(
@@ -37,11 +39,10 @@ contract SystemEngine is SelfVerificationRoot {
 
         Poll pollContract = Poll(pollAddress);
 
-        if (keccak256(bytes(actionType)) == keccak256(bytes("register"))) {
+        if (keccak256(bytes(actionType)) == keccak256(bytes("register-user"))) {
             pollContract.addParticipant(participant, output.nationality);
         } else if (keccak256(bytes(actionType)) == keccak256(bytes("create-poll"))) {
-            //How to pass arguments here
-            createPoll();
+            isVerified[participant] = true;
         }
     }
 
@@ -67,7 +68,11 @@ contract SystemEngine is SelfVerificationRoot {
         address _owner,
         string[] memory _countries,
         bytes32 verificationConfigId
-    ) internal {
+    ) external {
+        if (!isVerified[msg.sender]) {
+            revert SystemEngine__NotValidHuman();
+        }
+
         Poll poll = new Poll(_title, _options, _owner, _countries);
 
         bytes32 code = keccak256(abi.encodePacked(_title, msg.sender, block.timestamp));
@@ -78,15 +83,16 @@ contract SystemEngine is SelfVerificationRoot {
         configIds[address(poll)] = verificationConfigId;
 
         poll.start();
+        emit PollCreated(id);
     }
 
     function castVote(uint256 _id, uint256 _option) external {
-        address pollAddress = idToAddress(_id);
+        address pollAddress = idToAddress[_id];
         Poll(pollAddress).castVote(msg.sender, _option);
     }
 
     function endPoll(uint256 _id) external {
-        address pollAddress = idToAddress(_id);
+        address pollAddress = idToAddress[_id];
         Poll(pollAddress).end();
     }
 }
