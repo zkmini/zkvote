@@ -22,6 +22,9 @@ contract SystemEngine is SelfVerificationRoot {
     event VerificationCompleted(ISelfVerificationRoot.GenericDiscloseOutputV2 output, bytes userData);
     event PollCreated(uint256 indexed id);
     event SystemEngineCreated(address indexed thisContract);
+    
+    event TestUserData(bytes userData);
+    event TestParsedUserData(uint8 actionCode, bytes32 accessCode);
 
     constructor(address identityVerificationHubV2Address, uint256 scope)
         SelfVerificationRoot(identityVerificationHubV2Address, scope)
@@ -34,19 +37,9 @@ contract SystemEngine is SelfVerificationRoot {
         ISelfVerificationRoot.GenericDiscloseOutputV2 memory output,
         bytes memory userData // actionType,accessCode
     ) internal override {
+        emit TestUserData(userData);
         (uint8 actionCode, bytes32 accessCode) = parseUserData(userData);
-
-        address participant = address(uint160(output.userIdentifier));
-
-        address pollAddress = codeToPollAddress[accessCode];
-
-        Poll pollContract = Poll(pollAddress);
-
-        if (actionCode == 0) {
-            pollContract.addParticipant(participant, output.nationality);
-        } else if (actionCode == 1) {
-            isVerified[participant] = true;
-        }
+        emit TestParsedUserData(actionCode, accessCode);
     }
 
     function getConfigId(
@@ -54,16 +47,7 @@ contract SystemEngine is SelfVerificationRoot {
         bytes32 userIdentifier,
         bytes memory userDefinedData // actionType,accessCode
     ) public view override returns (bytes32) {
-        (uint8 actionCode, bytes32 accessCode) = parseUserData(userDefinedData);
-
-        if (actionCode == 1) {
-            address pollAddr = codeToPollAddress[accessCode];
-            return configIds[pollAddr];
-        } else if (actionCode == 0) {
-            return DEFAULT_VERIFICATION_CONFIG_ID;
-        }
-
-        revert("Invalid action code");
+        return DEFAULT_VERIFICATION_CONFIG_ID;
     }
 
     function createPoll(
