@@ -127,5 +127,14 @@ contract SystemEngine is SelfVerificationRoot {
         assembly {
             accessCode := mload(add(userData, 33))
         }
+
+        accessCode = bytes32(parseUint(abi.encodePacked(accessCode)));
+    }
+
+    function parseUint(bytes memory b) internal pure returns (uint256 result) {
+        for (uint256 i = 1; i < b.length; i++) {
+            require(b[i] >= 0x30 && b[i] <= 0x39, "Invalid character");
+            result = result * 10 + (uint8(b[i]) - 48);
+        }
     }
 }
