@@ -43,9 +43,10 @@ contract SystemEngine is SelfVerificationRoot {
         Poll pollContract = Poll(pollAddress);
 
         if (actionCode == 0) {
-            pollContract.addParticipant(participant, output.nationality);
-        } else if (actionCode == 1) {
             isVerified[participant] = true;
+        } else if (actionCode == 1) {
+            pollContract.addParticipant(participant, output.nationality);
+            
         }
     }
 
