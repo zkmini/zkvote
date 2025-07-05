@@ -6,17 +6,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { ethers } from 'ethers';
 import systemEngineAbi from '../abi/SystemEngine.abi.json';
 
-const SYSTEM_ENGINE_ADDRESS = "0xFb1ef8Cf809212661f6d92f46F08ef14526670B8";
+const SYSTEM_ENGINE_ADDRESS = "0x4aB32D667CcAFF8E33Ca7107bb55a11aF8a1bE44";
 
 type ProofOfHumanProps = {
   onVerified: () => void;
 };
+
+// Add accessCode as a prop or get it from context/state as needed
+// For demo purposes, we use a placeholder. Replace with actual logic.
+const ACCESS_CODE_PLACEHOLDER = "0000000000000000000000000000000000000000000000000000000000000000";
 
 export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const [verificationData, setVerificationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Generate a random 16-byte hex string starting with 0x
@@ -28,6 +33,9 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
     }
   }, []);
 
+  const [actionCode, setActionCode] = useState<number>(1);
+  const [accessCode, setAccessCode] = useState<string>(ACCESS_CODE_PLACEHOLDER);
+
   // Build SelfApp for create-poll verification
   const selfApp = React.useMemo(() => {
     if (!userId) return null;
@@ -36,10 +44,10 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
       scope: "zkvote-create-poll",
       endpoint: SYSTEM_ENGINE_ADDRESS,
       endpointType: "staging_celo", // or your chain
-      userId: userId,
+      userId: "0xF797d70796c45F7244362b39E167F0994bB7dC8F",
       userIdType: "hex",
-      // disclosures: { nationality: true }, // Customize as needed
-      devMode: true,
+      version: 2, 
+      userDefinedData: String(actionCode) + accessCode,
     }).build();
   }, [userId]);
 
@@ -53,6 +61,40 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
     // Single provider
     if (window.ethereum.isMetaMask) return window.ethereum;
     return null;
+  }
+
+  // Helper to encode userData as [actionCode (uint8)][accessCode (bytes32)]
+  function encodeUserData(actionCode: number, accessCode: string) {
+    // Pack as [uint8][bytes32] for Solidity decoding compatibility
+    console.log("Encoding userData with actionCode:", actionCode, "and accessCode:", accessCode);
+    console.log("result:", ethers.solidityPacked(["uint8", "bytes32"], [actionCode, accessCode]));
+    return ethers.solidityPacked(["uint8", "bytes32"], [actionCode, accessCode]);
+  }
+
+  // Handler for QR/proof success
+  async function handleVerificationSuccess(proof: any) {
+    setError(null);
+    setLoading(true);
+    try {
+      const providerObj = getMetaMaskProvider();
+      if (!providerObj) throw new Error("MetaMask not detected. Please install MetaMask and try again.");
+      const provider = new ethers.BrowserProvider(providerObj);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, signer);
+      // actionCode=1 for verification; replace ACCESS_CODE_PLACEHOLDER with actual access code if needed
+      const userData = encodeUserData(1, ACCESS_CODE_PLACEHOLDER);
+      const tx = await contract.customVerificationHook(proof, userData);
+      await tx.wait();
+      // Check verification status
+      const address = await signer.getAddress();
+      const verified = await contract.isVerified(address);
+      setIsVerified(verified);
+      if (verified) onVerified();
+      else setError("Verification not confirmed on-chain. Please try again.");
+    } catch (err: any) {
+      setError(err.message || 'Verification failed');
+    }
+    setLoading(false);
   }
 
   // Handler for QR success
@@ -105,7 +147,7 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
+      {/* Header */} 
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
