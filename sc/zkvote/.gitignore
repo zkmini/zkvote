@@ -12,5 +12,8 @@ docs/
 
 # Dotenv file
 .env
+<<<<<<< HEAD
 
 node_modules
+=======
+>>>>>>> ff935c8 (initial Poll setup)
