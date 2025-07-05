@@ -9,3 +9,6 @@ remappings = [
     "@selfxyz/contracts=node_modules/@selfxyz/contracts/contracts/",
     "@openzeppelin/contracts=node_modules/@openzeppelin/contracts/",
 ]
+
+[rpc_endpoints]
+celo-alfajores = "https://alfajores-forno.celo-testnet.org"
