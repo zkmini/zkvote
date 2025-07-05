@@ -35,8 +35,8 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
     appName: "Prove You're Human",
     scope: "prove-human-demo",
     endpoint: process.env.NODE_ENV === 'production'
-      ? "https://ebbe-83-144-23-157.ngrok-free.app/api/verify"
-      : "https://ebbe-83-144-23-157.ngrok-free.app/api/verify", // Replace with your ngrok URL, don't forget to add /api/verify to the end of your ngrok URL
+      ? "https://e124-83-144-23-157.ngrok-free.app/api/verify"
+      : "https://e124-83-144-23-157.ngrok-free.app/api/verify", // Replace with your ngrok URL, don't forget to add /api/verify to the end of your ngrok URL
     endpointType: "https",
     userId,
     userIdType: "uuid",
