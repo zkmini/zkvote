@@ -21,11 +21,13 @@ contract SystemEngine is SelfVerificationRoot {
 
     event VerificationCompleted(ISelfVerificationRoot.GenericDiscloseOutputV2 output, bytes userData);
     event PollCreated(uint256 indexed id);
+    event SystemEngineCreated(address indexed thisContract);
 
     constructor(address identityVerificationHubV2Address, uint256 scope)
         SelfVerificationRoot(identityVerificationHubV2Address, scope)
     {
         pollCount = 0;
+        emit SystemEngineCreated(address(this));
     }
 
     function customVerificationHook(
