@@ -17,16 +17,15 @@ contract SystemEngine is SelfVerificationRoot {
     mapping(uint256 pollId => address pollAddress) idToAddress;
 
     bytes32 private constant DEFAULT_VERIFICATION_CONFIG_ID =
-        "0x7b6436b0c98f62380866d9432c2af0ee08ce16a171bda6951aecd95ee1307d61";
+        0x7b6436b0c98f62380866d9432c2af0ee08ce16a171bda6951aecd95ee1307d61;
 
     event VerificationCompleted(ISelfVerificationRoot.GenericDiscloseOutputV2 output, bytes userData);
     event PollCreated(uint256 indexed id);
 
-    constructor(address identityVerificationHubV2Address, uint256 scope, bytes32 _verificationConfigId)
+    constructor(address identityVerificationHubV2Address, uint256 scope)
         SelfVerificationRoot(identityVerificationHubV2Address, scope)
     {
         pollCount = 0;
-        verificationConfigId = _verificationConfigId;
     }
 
     function customVerificationHook(
@@ -40,7 +39,7 @@ contract SystemEngine is SelfVerificationRoot {
 
         Poll pollContract = Poll(pollAddress);
 
-        if (keccak256(bytes(actionType)) == keccak256(bytes("register"))) {
+        if (keccak256(bytes(actionType)) == keccak256(bytes("register-user"))) {
             pollContract.addParticipant(participant, output.nationality);
         } else if (keccak256(bytes(actionType)) == keccak256(bytes("create-poll"))) {
             isVerified[participant] = true;
@@ -88,12 +87,12 @@ contract SystemEngine is SelfVerificationRoot {
     }
 
     function castVote(uint256 _id, uint256 _option) external {
-        address pollAddress = idToAddress(_id);
+        address pollAddress = idToAddress[_id];
         Poll(pollAddress).castVote(msg.sender, _option);
     }
 
     function endPoll(uint256 _id) external {
-        address pollAddress = idToAddress(_id);
+        address pollAddress = idToAddress[_id];
         Poll(pollAddress).end();
     }
 }
