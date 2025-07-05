@@ -34,12 +34,10 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
   const selfApp = new SelfAppBuilder({
     appName: "Prove You're Human",
     scope: "prove-human-demo",
-    endpoint: process.env.NODE_ENV === 'production'
-      ? "https://e124-83-144-23-157.ngrok-free.app/api/verify"
-      : "https://e124-83-144-23-157.ngrok-free.app/api/verify", // Replace with your ngrok URL, don't forget to add /api/verify to the end of your ngrok URL
-    endpointType: "https",
+    endpoint: systemEngineAddress, 
+    endpointType: "staging_celo",
     userId,
-    userIdType: "uuid",
+    userIdType: "hex",
     disclosures: {
       issuing_state: true,
       name: true,
