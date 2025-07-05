@@ -4,7 +4,7 @@ import { WagmiProvider, useAccount, useConnect } from "wagmi";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { wagmiConfig } from "./wagmiConfig";
 import { queryClient } from "./queryClient";
-import { ProofOfHuman } from "../components/ProofOfHuman";
+import ProofOfHuman from "../components/ProofOfHuman";
 
 const TABS = ["Polls", "Votes"] as const;
 type Tab = typeof TABS[number];
