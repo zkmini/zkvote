@@ -57,10 +57,10 @@ contract SystemEngine is SelfVerificationRoot {
     ) public view override returns (bytes32) {
         (uint8 actionCode, bytes32 accessCode) = parseUserData(userDefinedData);
 
-        if (actionCode == 1) {
+        if (actionCode == 0) {
             address pollAddr = codeToPollAddress[accessCode];
             return configIds[pollAddr];
-        } else if (actionCode == 0) {
+        } else if (actionCode == 1) {
             return DEFAULT_VERIFICATION_CONFIG_ID;
         }
 
