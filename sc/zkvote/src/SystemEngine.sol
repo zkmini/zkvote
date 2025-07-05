@@ -5,11 +5,8 @@ import {SelfVerificationRoot} from "@selfxyz/contracts/abstract/SelfVerification
 import {ISelfVerificationRoot} from "@selfxyz/contracts/interfaces/ISelfVerificationRoot.sol";
 import {SelfStructs} from "@selfxyz/contracts/libraries/SelfStructs.sol";
 import {Poll} from "./Poll.sol";
-import {BytesLib} from "./BytesLib.sol";
 
 contract SystemEngine is SelfVerificationRoot {
-    using BytesLib for bytes;
-
     error SystemEngine__NotValidHuman();
 
     uint256 private pollCount;
@@ -37,13 +34,7 @@ contract SystemEngine is SelfVerificationRoot {
         ISelfVerificationRoot.GenericDiscloseOutputV2 memory output,
         bytes memory userData // actionType,accessCode
     ) internal override {
-        uint8 actionCode = uint8(userData[0]);
-
-        bytes memory rawCode = BytesLib.slice(userData, 1, 32);
-        bytes32 accessCode;
-        assembly {
-            accessCode := mload(add(rawCode, 32))
-        }
+        (uint8 actionCode, bytes32 accessCode) = parseUserData(userData);
 
         address participant = address(uint160(output.userIdentifier));
 
@@ -63,13 +54,9 @@ contract SystemEngine is SelfVerificationRoot {
         bytes32 userIdentifier,
         bytes memory userDefinedData // actionType,accessCode
     ) public view override returns (bytes32) {
-        uint8 actionCode = uint8(userDefinedData[0]);
+        (uint8 actionCode, bytes32 accessCode) = parseUserData(userDefinedData);
+
         if (actionCode == 1) {
-            bytes memory rawCode = BytesLib.slice(userDefinedData, 1, 32);
-            bytes32 accessCode;
-            assembly {
-                accessCode := mload(add(rawCode, 32))
-            }
             address pollAddr = codeToPollAddress[accessCode];
             return configIds[pollAddr];
         } else if (actionCode == 0) {
@@ -115,5 +102,30 @@ contract SystemEngine is SelfVerificationRoot {
 
     function setScope(uint256 _scope) external {
         _setScope(_scope);
+    }
+
+    /// @dev Parse userData to extract actionCode and accessCode
+    function parseUserData(bytes memory userData) internal pure returns (uint8 actionCode, bytes32 accessCode) {
+        require(userData.length >= 33, "Invalid userData length");
+
+        // Check if first byte is ASCII '0' or '1' (hex encoded)
+        uint8 firstByte = uint8(userData[0]);
+        if (firstByte == 0x30) {
+            // ASCII '0'
+            actionCode = 0;
+        } else if (firstByte == 0x31) {
+            // ASCII '1'
+            actionCode = 1;
+        } else if (firstByte == 0 || firstByte == 1) {
+            // Raw bytes
+            actionCode = firstByte;
+        } else {
+            revert("Invalid action code");
+        }
+
+        // Extract accessCode from remaining bytes
+        assembly {
+            accessCode := mload(add(userData, 33))
+        }
     }
 }
