@@ -97,4 +97,8 @@ contract SystemEngine is SelfVerificationRoot {
         address pollAddress = idToAddress[_id];
         Poll(pollAddress).end();
     }
+
+    function setScope(uint256 _scope) external {
+        _setScope(_scope);
+    }
 }
