@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@selfxyz/qrcode": "^1.0.10-beta.1"
+  }
+}

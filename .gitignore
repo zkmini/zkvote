@@ -5,3 +5,5 @@ sc/zkvote/node_modules
 =======
 .DS_Store
 >>>>>>> ff935c8 (initial Poll setup)
+node_modules
+    

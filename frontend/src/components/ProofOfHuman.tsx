@@ -1,12 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { SelfQRcodeWrapper, SelfAppBuilder } from '@selfxyz/qrcode';
+import dynamic from 'next/dynamic';
+import { SelfAppBuilder, SelfApp, SelfQRcodeWrapper } from '@selfxyz/qrcode';
+
 import { v4 as uuidv4 } from 'uuid';
 import { ethers } from 'ethers';
 import systemEngineAbi from '../abi/SystemEngine.abi.json';
 
+
 const SYSTEM_ENGINE_ADDRESS = "0x4aB32D667CcAFF8E33Ca7107bb55a11aF8a1bE44";
+
+
 
 type ProofOfHumanProps = {
   onVerified: () => void;
@@ -36,20 +41,32 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
   const [actionCode, setActionCode] = useState<number>(1);
   const [accessCode, setAccessCode] = useState<string>(ACCESS_CODE_PLACEHOLDER);
 
-  // Build SelfApp for create-poll verification
+  // Build SelfApp for create-poll verification – wrap in try/catch so we can surface any issues to the UI
   const selfApp = React.useMemo(() => {
     if (!userId) return null;
-    return new SelfAppBuilder({
-      appName: "ZK Vote Proof of Human",
-      scope: "zkvote-create-poll",
-      endpoint: SYSTEM_ENGINE_ADDRESS,
-      endpointType: "staging_celo", // or your chain
-      userId: "0xF797d70796c45F7244362b39E167F0994bB7dC8F",
-      userIdType: "hex",
-      version: 2, 
-      userDefinedData: String(actionCode) + accessCode,
-    }).build();
-  }, [userId]);
+    try {
+      return new SelfAppBuilder({
+        appName: "ZK Vote Proof of Human",
+        scope: "zkvote-create-poll",
+        endpoint: SYSTEM_ENGINE_ADDRESS,
+        endpointType: "staging_celo", // or your chain
+        userId: "0xF797d70796c45F7244362b39E167F0994bB7dC8F",
+        userIdType: "hex",
+        version: 2,
+        userDefinedData: String(actionCode) + accessCode,
+        disclosures: {
+          nationality: true,
+          gender: true,
+        }
+        
+      }).build();
+    } catch (e: any) {
+      console.error("Error building SelfApp", e);
+      setError(e?.message || "Failed to initialise QR code provider");
+      return null;
+    }
+  }, [userId, actionCode, accessCode]);
+  
 
   // Helper to get MetaMask provider only
   function getMetaMaskProvider() {
@@ -193,12 +210,13 @@ export default function ProofOfHuman({ onVerified }: ProofOfHumanProps) {
             {/* QR Code */}
             <div className="flex justify-center mb-8">
               <div className="p-6 bg-gray-50 rounded-xl">
-                <SelfQRcodeWrapper
-                  selfApp={selfApp}
-                  onSuccess={handleSuccess}
-                  onError={handleError}
-                  size={280}
-                />
+                
+                  {!error ? <SelfQRcodeWrapper
+                    selfApp={selfApp}
+                    onSuccess={handleSuccess}
+                    onError={handleError}
+                    /> : <p className="text-gray-500 text-sm">{error}</p>}
+                
               </div>
             </div>
 
