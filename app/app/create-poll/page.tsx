@@ -4,19 +4,50 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { countries as allCountries } from '@selfxyz/qrcode';
 import { countryCodes, type Country3LetterCode } from '@selfxyz/common';
-import { AbiCoder, keccak256 } from 'ethers';
+import { ethers } from 'ethers';
+import { getSystemEngine, getSystemEngineContract } from '../../lib/systemEngine';
+import { HUB_CONTRACT_ABI } from './hub_contract';
+import { abi } from '../../abi/SystemEngine';
 
 // helper to generate a verification config ID
-const generateVerificationConfigId = (
+async function generateVerificationConfigId(
   minAge: number,
-  allowedCountries: Country3LetterCode[],
-) => {
-  const coder = new AbiCoder();
-  const encoded = coder.encode(
-    ['uint256', 'string[]'],
-    [BigInt(minAge), allowedCountries],
-  );
-  return keccak256(encoded);
+) {
+  const DEFAULT_HUB_ADDRESSES = '0x68c931C9a534D37aa78094877F46fE46a49F1A51';
+  const RPC_URLS = 'https://alfajores-forno.celo-testnet.org';
+  const config = {
+    olderThanEnabled:minAge > 0,
+    olderThan: minAge,
+    forbiddenCountriesEnabled: false,
+    forbiddenCountriesListPacked:  [BigInt(0), BigInt(0), BigInt(0), BigInt(0)],
+    ofacEnabled: [true , true , true]
+  };
+
+  try {
+    const currentNetwork = {
+      key: 'alfajores' as const,
+      name: 'Celo Testnet (Alfajores)',
+      hubAddress: DEFAULT_HUB_ADDRESSES,
+      rpcUrl: RPC_URLS
+    }
+    const readProvider = new ethers.JsonRpcProvider(currentNetwork.rpcUrl);
+    const contract = new ethers.Contract(currentNetwork.hubAddress, HUB_CONTRACT_ABI, readProvider);
+
+    const configId = await contract.generateConfigId(config);
+    return configId;
+  } catch (error) {
+    console.error('Error generating config ID from contract:', error);
+    return ethers.solidityPackedKeccak256(
+      ['bool', 'uint256', 'bool', 'uint256[4]', 'bool[3]'],
+      [
+        config.olderThanEnabled,
+        config.olderThan,
+        config.forbiddenCountriesEnabled,
+        config.forbiddenCountriesListPacked,
+        config.ofacEnabled
+      ]
+    );
+  }
 };
 
 export default function CreatePollPage() {
@@ -49,12 +80,33 @@ export default function CreatePollPage() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const configId = generateVerificationConfigId(minAge, countryList);
+    const configId = await generateVerificationConfigId(minAge);
     setVerificationConfigId(configId);
-    // TODO: send to backend / blockchain here
+    // TODO: send to blockchain here
     console.log('Verification Config ID:', configId);
+
+    // get shared contract (connects wallet if needed)
+    const systemEngine = await getSystemEngine();
+    const signer = systemEngine.runner! as ethers.Signer;
+
+    try {
+      const tx = await systemEngine.createPoll(
+        name,
+        options,
+        await signer.getAddress(),
+        countryList,
+        configId,
+      );
+      console.log('createPoll tx hash:', tx.hash);
+      await tx.wait();
+      alert('Poll created on-chain!');
+    } catch (err) {
+      console.error('createPoll error:', err);
+      alert('Transaction failed – see console for details.');
+      return;
+    }
     console.log({ name, description, minAge, options, countryList });
     alert('Poll created (console log).');
     router.push('/verified');

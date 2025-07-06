@@ -9,9 +9,10 @@ import {
   type SelfApp,
 } from "@selfxyz/qrcode";
 import { BrowserProvider, Contract, ZeroAddress } from "ethers";
-import systemEngineAbi from "../abi/SystemEngine.abi";
+import { SYSTEM_ENGINE_ADDRESS, getSystemEngineContract } from "../lib/systemEngine";
+import { abi } from "../abi/SystemEngine";
 
-const SYSTEM_ENGINE_ADDRESS = "0x4aB32D667CcAFF8E33Ca7107bb55a11aF8a1bE44";
+
 
 const ACCESS_CODE_PLACEHOLDER =
   "0000000000000000000000000000000000000000000000000000000000000000";
@@ -53,11 +54,7 @@ export default function Home() {
   
       // Ethers v6 BrowserProvider
       const provider = new BrowserProvider(window.ethereum as any);
-      const contract = new Contract(
-        SYSTEM_ENGINE_ADDRESS,
-        systemEngineAbi,
-        provider
-      );
+      const contract = getSystemEngineContract() ?? new Contract(SYSTEM_ENGINE_ADDRESS, abi, provider);
   
       // Read chain to see if user is already verified
       const verified: boolean = await contract.isVerified(account);
