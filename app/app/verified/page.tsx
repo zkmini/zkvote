@@ -18,21 +18,27 @@ export default function VerifiedLanding() {
   }, [router]);
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-blue-50 text-gray-900">
-      <h1 className="text-3xl sm:text-4xl font-extrabold mb-12 text-blue-800">
-        Identity Verified
-      </h1>
-      <div className="flex flex-col sm:flex-row gap-6">
+      {/* Ballot emoji to the right of zkVote title */}
+      <div className="flex flex-row items-center mb-16">
+        <span className="text-4xl sm:text-5xl font-extrabold text-blue-800 drop-shadow-lg">zkVote</span>
+        <span className="text-[2.5rem] sm:text-[3.5rem] ml-4" role="img" aria-label="Ballot">🗳️</span>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-10 w-full max-w-3xl justify-center items-center">
+        {/* Create Poll Tile */}
         <Link
           href="/create-poll"
-          className="px-8 py-4 rounded-lg text-white font-semibold bg-green-500 hover:bg-green-600 transition-colors text-xl text-center"
+          className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-green-400 to-green-600 shadow-xl rounded-2xl px-12 py-10 sm:px-16 sm:py-16 h-64 w-full sm:w-96 max-w-full transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl focus:outline-none"
         >
-          Create Poll
+          <span className="text-3xl sm:text-4xl font-bold text-white mb-3">Create Poll</span>
+          <span className="text-lg sm:text-xl text-green-100 font-medium text-center">Start a new poll and invite others to vote securely.</span>
         </Link>
+        {/* Join Poll Tile */}
         <Link
           href="/join-poll"
-          className="px-8 py-4 rounded-lg text-white font-semibold bg-red-500 hover:bg-red-600 transition-colors text-xl text-center"
+          className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-red-400 to-red-600 shadow-xl rounded-2xl px-12 py-10 sm:px-16 sm:py-16 h-64 w-full sm:w-96 max-w-full transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl focus:outline-none"
         >
-          Join Poll
+          <span className="text-3xl sm:text-4xl font-bold text-white mb-3">Join Poll</span>
+          <span className="text-lg sm:text-xl text-red-100 font-medium text-center">Enter an access code to participate in an existing poll.</span>
         </Link>
       </div>
     </div>

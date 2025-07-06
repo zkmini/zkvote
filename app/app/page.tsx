@@ -13,9 +13,7 @@ import { SYSTEM_ENGINE_ADDRESS, getSystemEngineContract } from "../lib/systemEng
 import { abi } from "../abi/SystemEngine";
 
 
-
-const ACCESS_CODE_PLACEHOLDER =
-  "0000000000000000000000000000000000000000000000000000000000000000";
+import { SYSTEM_ENGINE_ADDRESS, ACCESS_CODE_PLACEHOLDER } from "./constants";
 
 export default function Home() {
   const router = useRouter();
@@ -154,13 +152,21 @@ export default function Home() {
 
   if (!showMain) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white text-2xl px-12 py-6 rounded-full shadow-lg transition"
-          onClick={connectWallet}
-        >
-          Connect MetaMask
-        </button>
+      <div className="min-h-screen flex items-center justify-center bg-blue-50 py-16 px-4 sm:px-6 md:px-8">
+        <div className="text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-8 text-blue-800">
+            ZK Vote
+            <span role="img" aria-label="vote emoji">
+              🗳️
+            </span>
+          </h1>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white text-2xl px-12 py-6 rounded-full shadow-lg transition"
+            onClick={connectWallet}
+          >
+            Connect wallet
+          </button>
+        </div>
       </div>
     );
   }
@@ -169,10 +175,10 @@ export default function Home() {
     <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
       <div className="mb-6 md:mb-8 text-center">
         <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">
-          {process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop"}
+          {process.env.NEXT_PUBLIC_SELF_APP_NAME || "Proof of Human"}
         </h1>
         <p className="text-sm sm:text-base text-gray-600 px-2">
-          Scan QR code with Self Protocol App to verify your identity
+        Scan the QR code below with the Self mobile app to prove you're a real person
         </p>
       </div>
 
