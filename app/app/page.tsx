@@ -11,10 +11,7 @@ import {
 import { BrowserProvider, Contract, ZeroAddress } from "ethers";
 import systemEngineAbi from "../abi/SystemEngine.abi";
 
-const SYSTEM_ENGINE_ADDRESS = "0x4aB32D667CcAFF8E33Ca7107bb55a11aF8a1bE44";
-
-const ACCESS_CODE_PLACEHOLDER =
-  "0000000000000000000000000000000000000000000000000000000000000000";
+import { SYSTEM_ENGINE_ADDRESS, ACCESS_CODE_PLACEHOLDER } from "./constants";
 
 export default function Home() {
   const router = useRouter();
@@ -180,10 +177,10 @@ export default function Home() {
     <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
       <div className="mb-6 md:mb-8 text-center">
         <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800">
-          {process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop"}
+          {process.env.NEXT_PUBLIC_SELF_APP_NAME || "Proof of Human"}
         </h1>
         <p className="text-sm sm:text-base text-gray-600 px-2">
-          Scan QR code with Self Protocol App to verify your identity
+        Scan the QR code below with the Self mobile app to prove you're a real person
         </p>
       </div>
 
