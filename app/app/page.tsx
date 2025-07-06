@@ -40,30 +40,57 @@ export default function Home() {
   };
 
   const connectWallet = async () => {
+    if (typeof window.ethereum === "undefined") {
+      displayToast("MetaMask not detected. Please install MetaMask and try again.");
+      return;
+    }
+  
     try {
-      const provider = new BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-      setWalletAddress(address);
-      setUserId(address);
-
+      // Request accounts
+      const [account] = await window.ethereum.request!({ method: "eth_requestAccounts" }) as string[];
+      setWalletAddress(account);
+      setShowMain(true);
+  
+      // Ethers v6 BrowserProvider
+      const provider = new BrowserProvider(window.ethereum as any);
       const contract = new Contract(
         SYSTEM_ENGINE_ADDRESS,
         systemEngineAbi,
         provider
       );
-
-      const verified = await contract.isVerified(address);
+  
+      // Read chain to see if user is already verified
+      const verified: boolean = await contract.isVerified(account);
       setIsVerifiedUser(verified);
-      setShowMain(true);
-    } catch (err) {
-      console.error("Wallet connection failed", err);
-      displayToast("Wallet connection failed");
+  
+      // Wire up listeners—cast to any so TS will let us
+      const eth = window.ethereum as any;
+      if (eth.on) {
+        eth.on("accountsChanged", (accounts: string[]) => {
+          // If they disconnect all, accounts = []
+          if (accounts.length === 0) {
+            setWalletAddress(null);
+            setIsVerifiedUser(null);
+          } else {
+            setWalletAddress(accounts[0]);
+            // re‑check on new account
+            contract.isVerified(accounts[0]).then(setIsVerifiedUser);
+          }
+        });
+  
+        eth.on("chainChanged", (chainId: string) => {
+          // You may want to guard for the right chainId here
+          window.location.reload();
+        });
+      }
+    } catch (err: any) {
+      console.error("connectWallet error:", err);
+      displayToast(err.message || "Failed to connect wallet");
     }
   };
+  
 
   useEffect(() => {
-    if (isVerifiedUser === false) {
       try {
         const app = new SelfAppBuilder({
           appName: "ZK Vote Proof of Human",
@@ -82,11 +109,12 @@ export default function Home() {
 
         setSelfApp(app);
         setUniversalLink(getUniversalLink(app));
+        // QR code will show; verification flag updated in onSuccess handler
       } catch (error) {
         console.error("Failed to initialize Self app:", error);
       }
-    }
-  }, [walletAddress, isVerifiedUser]);
+    
+  }, [walletAddress]);
 
   const copyToClipboard = () => {
     if (!universalLink) return;
