@@ -140,10 +140,11 @@ export default function Home() {
   };
 
   const handleSuccessfulVerification = () => {
-    displayToast("Verification successful! Redirecting...");
-    setTimeout(() => {
-      router.push("/verified");
-    }, 1500);
+    // Mark user as verified and go to landing immediately
+    if (typeof window !== "undefined") {
+      localStorage.setItem("zkvote_verified", "true");
+    }
+    router.push("/verified");
   };
 
   if (showMain && isVerifiedUser) {
