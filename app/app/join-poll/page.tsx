@@ -9,7 +9,7 @@ import {
 } from '@selfxyz/qrcode';
 
 import { SYSTEM_ENGINE_ADDRESS, CELO_TESTNET_RPC } from '../constants';
-import systemEngineAbi from '../../abi/SystemEngine.abi';
+import {abi} from '../../abi/SystemEngine';
 
 // Read configId from smart contract
 async function getConfigId(
@@ -18,7 +18,7 @@ async function getConfigId(
   userDefinedData: string         // hex-encoded bytes
 ): Promise<string> {
   const provider = new JsonRpcProvider(CELO_TESTNET_RPC);
-  const contract = new Contract(SYSTEM_ENGINE_ADDRESS, systemEngineAbi, provider);
+  const contract = new Contract(SYSTEM_ENGINE_ADDRESS, abi  , provider);
   return await contract.getConfigId(destinationChainId, userIdentifier, userDefinedData);
 }
 
@@ -50,17 +50,13 @@ export default function JoinPollPage() {
 
         const selfApp = new SelfAppBuilder({
           appName: 'ZK Vote Poll Join',
-          scope: 'zkvote-join-poll',
+          scope: 'zkvote-create-poll',
           endpoint,
           endpointType,
           userId: ZeroAddress,
           userIdType: 'hex',
           version: 2,
           userDefinedData: fullUserData,
-          disclosures: {
-            nationality: true,
-            age: true,
-          },
         }).build();
 
         setSelfApp(selfApp);
