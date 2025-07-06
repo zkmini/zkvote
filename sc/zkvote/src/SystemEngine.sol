@@ -56,10 +56,10 @@ contract SystemEngine is SelfVerificationRoot {
     ) public view override returns (bytes32) {
         (uint8 actionCode, bytes32 accessCode) = parseUserData(userDefinedData);
 
-        if (actionCode == 1) {
+        if (actionCode == 0) {
             address pollAddr = codeToPollAddress[accessCode];
             return configIds[pollAddr];
-        } else if (actionCode == 0) {
+        } else if (actionCode == 1) {
             return DEFAULT_VERIFICATION_CONFIG_ID;
         }
 
@@ -126,6 +126,15 @@ contract SystemEngine is SelfVerificationRoot {
         // Extract accessCode from remaining bytes
         assembly {
             accessCode := mload(add(userData, 33))
+        }
+
+        accessCode = bytes32(parseUint(abi.encodePacked(accessCode)));
+    }
+
+    function parseUint(bytes memory b) internal pure returns (uint256 result) {
+        for (uint256 i = 1; i < b.length; i++) {
+            require(b[i] >= 0x30 && b[i] <= 0x39, "Invalid character");
+            result = result * 10 + (uint8(b[i]) - 48);
         }
     }
 }
