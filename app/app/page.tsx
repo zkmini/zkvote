@@ -157,13 +157,21 @@ export default function Home() {
 
   if (!showMain) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white text-2xl px-12 py-6 rounded-full shadow-lg transition"
-          onClick={connectWallet}
-        >
-          Connect MetaMask
-        </button>
+      <div className="min-h-screen flex items-center justify-center bg-blue-50 py-16 px-4 sm:px-6 md:px-8">
+        <div className="text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold mb-8 text-blue-800">
+            ZK Vote
+            <span role="img" aria-label="vote emoji">
+              🗳️
+            </span>
+          </h1>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white text-2xl px-12 py-6 rounded-full shadow-lg transition"
+            onClick={connectWallet}
+          >
+            Connect wallet
+          </button>
+        </div>
       </div>
     );
   }
