@@ -9,7 +9,7 @@ import {
   type SelfApp,
 } from "@selfxyz/qrcode";
 import { BrowserProvider, Contract, ZeroAddress } from "ethers";
-import { SYSTEM_ENGINE_ADDRESS, getSystemEngineContract } from "../lib/systemEngine";
+import { getSystemEngineContract } from "../lib/systemEngine";
 import { abi } from "../abi/SystemEngine";
 
 
